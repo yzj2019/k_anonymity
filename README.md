@@ -268,6 +268,8 @@
            '''维护最小优先队列性质，tag为1时下沉，为0时上浮'''
        def is_empty(self):
            '''判断并返回优先队列是否为空'''
+       def empty(self):
+           '''清空最小优先队列'''
        def test_queue(self):
            '''测试优先队列'''
    ```
@@ -373,4 +375,38 @@
    ```
 
 ## 测试
+
+### load
+
+使用测试数据，测试数据集加载和清洗的正确性：
+
+![1](./figs/load.jpg)
+
+上图展示的就是下面用到的测试数据，下面不再展示数据集加载过程。
+
+### [samarati](./test1.py)
+
+使用测试数据，k=10、ms=20，测试编写的samarati算法的正确性：
+
+搜索过程：
+
+<img src="./figs/samarati_1.jpg" alt="1" style="zoom: 67%;" />
+
+泛化、删除、算Loss Metric、发布过程：
+
+<img src="./figs/samarati_2.jpg" alt="1" style="zoom:50%;" />
+
+### [mondrian](./test2.py)
+
+使用测试数据，k=10，测试编写的mondrian算法的正确性：
+
+切分dataframe的效果如下：
+
+<img src="./figs/mondrian_1.jpg" alt="1" style="zoom: 67%;" />
+
+可以看到切分并不会重置index，所以最后是能通过index索引到原数据的tuple的；
+
+搜索和泛化、发布数据的过程如下：
+
+<img src="./figs/mondrian_2.jpg" alt="1" style="zoom: 67%;" />
 
