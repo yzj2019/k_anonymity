@@ -4,12 +4,17 @@
 
 from k_anonymity.load import loaddata
 from k_anonymity.MyTree import MyTree
+from k_anonymity.MyPriorityQueue import MyPriorityQueue
 import os               # path split
 import numpy as np      # 数据处理
 import pandas as pd     # 数据处理
 import math             # 做floor、ceiling
 import copy             # 用于深拷贝
 import time             # 用于测量运行时间
+
+
+def smaller(a,b):
+    return a<b
 
 
 class samarati:
@@ -30,6 +35,7 @@ class samarati:
         self.attributes = attributes
         self.ms = ms
         self.tree = {}                          # QI->对应的泛化树形结构
+        self.Queue = MyPriorityQueue(smaller)   # 最小优先队列，最后搜索h相同的、LM最小的解用
         # 按照QI各个具体取值分组聚集计行数，方便后面统计一个cluster中的记录数判断k匿名；其中as_index=False表示不按照组标签作为索引，方便二次处理
         self.count = self.data.groupby(QI, as_index=False).count()
         # 去掉冗余属性
@@ -237,7 +243,7 @@ class samarati:
             count_new[qi] = count_new.apply(lambda row: self.multiply(row[qi], row['num']), axis=1)
         # 按列求和聚集
         count_new = count_new.sum()
-        print(count_new)
+        # print(count_new)
         LossMetric = count_new[self.QI].sum() / count_new['num']
         return LossMetric
 
@@ -282,13 +288,13 @@ class samarati:
         '''待完成，搜索并返回第h层中LM最优的泛化结果dom'''
         qi = self.QI[i]             # 当前处理的qi
         QI_num = len(self.QI)       # QI总个数
-        j = min(h, self.tree[qi].h) # 迭代用，从大的开始迭代
+        j = min(h, self.tree[qi].h) # 迭代用，从允许的最大的开始迭代
         j_end = 0
         k = i+1
         while k<QI_num:
             j_end = j_end + self.tree[self.QI[k]].h
             k = k+1
-        j_end = max(0, h-j_end)
+        j_end = max(0, h-j_end)     # 迭代用，j允许的最小值
         while(j>=j_end):
             # 通过对dom[i]的修改，对可能的情况做遍历
             if(i != QI_num-1):
@@ -296,22 +302,17 @@ class samarati:
                 dom[i] = j
                 h_new = h - j
                 i_new = i + 1
-                if(self.permutation(h_new,i_new,dom)):
-                    # 找到了，则不继续遍历，返回已经找到的
-                    return True
+                self.find_opt(h_new,i_new,dom)
             else:
                 # 是最后一个qi
                 if(h <= self.tree[qi].h):
                     # 符合求和等于给定值的要求
                     dom[i] = h
-                    if(self.is_kanonymity(dom,False)[0]):
-                        return True
-                    else:
-                        return False
-                else:
-                    return False
+                    res = self.is_kanonymity(dom,True)
+                    if(res[0]):
+                        # 为满足k匿名的解，以Loss Metric为key加入最小优先队列中
+                        self.Queue.enqueue(res[1], copy.deepcopy(dom))
             j = j - 1
-        return False
 
     def search(self):
         '''将数据做快速k匿名处理并发布成.data文件，返回生成的文件名'''
@@ -358,7 +359,9 @@ class samarati:
                 # 该层没有满足k匿名的，则向上找
                 right = math.floor((left+right)/2)
         # 搜索完成，发布数据
-        self.find_opt(left, 0, dom)
+        self.Queue.empty()              # 清空最小优先队列
+        self.find_opt(left, 0, dom)     # 找和相同的最优的dom
+        dom = self.Queue.dequeue()[1]
         print('=>end searching, result: dom={0}\n'.format(dom))
         self.pub_data(dom)
         # 打印测量的时间

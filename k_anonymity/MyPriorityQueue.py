@@ -89,6 +89,12 @@ class MyPriorityQueue:
         return len(self.queue) == 0
     
 
+    def empty(self):
+        '''清空最小优先队列'''
+        while self.is_empty() is False:
+            self.dequeue()
+
+
     def test_queue(self):
         '''测试优先队列'''
         self.enqueue(4, 'd')
