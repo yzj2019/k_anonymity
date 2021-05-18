@@ -121,7 +121,7 @@ class mondrian:
         out_path = firstname + '_mondrian.data'
         self.data.to_csv(out_path, index=False, header=False)
         print('===>publish file path:{0}'.format(out_path))
-
+        print('===>k={0}'.format(self.k))
         end = time.time()   # 结束时间
         print('=>end publishing, total lossmetric is:{0}, total publishing time is:{1}'.format(LossMetric, end-start))
         return out_path

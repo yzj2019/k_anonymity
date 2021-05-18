@@ -1,5 +1,9 @@
 # k匿名两种算法的python实现
 
+姓名：于子健
+
+学号：PB18000379
+
 [TOC]
 
 ## 环境
@@ -14,7 +18,7 @@
 
 ## 简介
 
-本仓库实现了k匿名的samarati算法和mondrian算法，下面是两种算法的简介和Quick Startup。
+本仓库实现了k匿名的samarati算法和mondrian算法，做成了即拆即用、适用性强的python模块；下面是两种算法的简介和Quick Startup。
 
 ### k匿名
 
@@ -376,37 +380,153 @@
 
 ## 测试
 
-### load
+### 正确性测试
 
-使用测试数据，测试数据集加载和清洗的正确性：
+1. load：
 
-![1](./figs/load.jpg)
+   使用测试数据，测试数据集加载和清洗的正确性：
 
-上图展示的就是下面用到的测试数据，下面不再展示数据集加载过程。
+   ![1](./figs/load.jpg)
 
-### [samarati](./test1.py)
+   上图展示的就是下面用到的测试数据，下面不再展示数据集加载过程。
 
-使用测试数据，k=10、ms=20，测试编写的samarati算法的正确性：
+2. samarati：
 
-搜索过程：
+   使用测试数据，k=10、ms=20，测试编写的samarati算法的正确性：
 
-<img src="./figs/samarati_1.jpg" alt="1" style="zoom: 67%;" />
+   搜索过程：
 
-泛化、删除、算Loss Metric、发布过程：
+   <img src="./figs/samarati_1.jpg" alt="1" style="zoom: 67%;" />
 
-<img src="./figs/samarati_2.jpg" alt="1" style="zoom:50%;" />
+   泛化、删除、算Loss Metric、发布过程：
 
-### [mondrian](./test2.py)
+   <img src="./figs/samarati_2.jpg" alt="1" style="zoom:50%;" />
 
-使用测试数据，k=10，测试编写的mondrian算法的正确性：
+3. mondrian：
 
-切分dataframe的效果如下：
+   使用测试数据，k=10，测试编写的mondrian算法的正确性：
 
-<img src="./figs/mondrian_1.jpg" alt="1" style="zoom: 67%;" />
+   切分dataframe的效果如下：
 
-可以看到切分并不会重置index，所以最后是能通过index索引到原数据的tuple的；
+   <img src="./figs/mondrian_1.jpg" alt="1" style="zoom: 67%;" />
 
-搜索和泛化、发布数据的过程如下：
+   可以看到切分并不会重置index，所以最后是能通过index索引到原数据的tuple的；
 
-<img src="./figs/mondrian_2.jpg" alt="1" style="zoom: 67%;" />
+   搜索和泛化、发布数据的过程如下：
 
+   <img src="./figs/mondrian_2.jpg" alt="1" style="zoom: 67%;" />
+
+### 结果的分析、讨论
+
+对相同的QI = ['age', 'gender', 'race', 'marital_status'], S = ['occupation']，变换不同的匿名属性值，观察结果的变化。
+
+1. samarati：
+
+   泛化向量dom与QI属性一一对应，为了显示出变化，这里没有均匀取点。
+
+   - k=10，ms=20：
+
+     ![1](./figs/samarati_3.jpg)
+
+   - k=10，ms=5：
+
+     ![1](./figs/samarati_4.jpg)
+
+   - k=10，ms=50：
+
+     ![1](./figs/samarati_5.jpg)
+
+   - k=5，ms=20：
+
+     ![1](./figs/samarati_6.jpg)
+
+   - k=20，ms=20：
+
+     ![1](./figs/samarati_7.jpg)
+
+   观察：
+
+   - 相同ms下，减小k相当于放松了k匿名的要求，因为需要更少地泛化就能使QI cluster中地tuple数目不小于k，相应解的LM会变小；增加k相当于缩紧了k匿名的要求，相应解的LM会变大。
+   - 相同k下，增加ms相当于放松了k匿名的要求，因为能更多地通过suppression删除不满足k匿名的QI cluster，相应解的LM会变小；减小ms相当于缩紧了k匿名的要求，相应解的LM会变大。
+
+2. mondrian：
+
+   - k=5：
+
+     ![1](./figs/mondrian_5.jpg)
+
+   - k=10：
+
+     ![1](./figs/mondrian_3.jpg)
+
+   - k=20：
+
+     ![1](./figs/mondrian_4.jpg)
+
+   观察：
+
+   减小k相当于放松了k匿名的要求，因为需要更少地划分QI cluster，就能使QI cluster中地tuple数目不小于k，相应解的LM会变小；增加k相当于缩紧了k匿名的要求，相应解的LM会变大。
+
+## 进阶
+
+### 合理选择samarati的解
+
+1. 基于samarati算法二分搜索所得的dom和：
+
+   即使是dom和已经达到最优了，仍然可能有多个Loss Metric不同的解满足要求；
+
+   在samarati算法的基础上，搜索得到最后的dom和后，遍历满足和等于该值的所有dom，取其中Loss Metric最小的作为最终发布数据所用dom；
+
+   搜索过程如下：
+
+   ```python
+   def find_opt(self, h, i, dom):
+           '''迭代搜索并返回第h层中LM最优的泛化结果dom'''
+           qi = self.QI[i]             # 当前处理的qi
+           QI_num = len(self.QI)       # QI总个数
+           j = min(h, self.tree[qi].h) # 迭代用，从允许的最大的开始迭代
+           j_end = 0
+           k = i+1
+           while k<QI_num:
+               j_end = j_end + self.tree[self.QI[k]].h
+               k = k+1
+           j_end = max(0, h-j_end)     # 迭代用，j允许的最小值
+           while(j>=j_end):
+               # 通过对dom[i]的修改，对可能的情况做遍历
+               if(i != QI_num-1):
+                   # 不是最后一个qi，则对下一个qi递归做判断
+                   dom[i] = j
+                   h_new = h - j
+                   i_new = i + 1
+                   self.find_opt(h_new,i_new,dom)
+               else:
+                   # 是最后一个qi
+                   if(h <= self.tree[qi].h):
+                       # 符合求和等于给定值的要求
+                       dom[i] = h
+                       res = self.is_kanonymity(dom,True)
+                       if(res[0]):
+                           # 为满足k匿名的解，以Loss Metric为key加入最小优先队列中
+                           self.Queue.enqueue(res[1], copy.deepcopy(dom))
+               j = j - 1
+   ```
+
+2. 对不同的QI属性，选用不同的评价指标：
+
+   - 一个很简单的例子，假如在实现samarati算法的时候，并不对标签型属性和数值型属性加以区分，统一视作标签型属性来处理，此时计算数值型属性的Loss Metric时，就很可能不准（因为若一个泛化区间对应多个实例，若视作标签型，需要按照LM=(泛化到该值的实例种类数-1)/(实例种类总数-1)来计算，但是这样并不能很好地评估数据可用性损失）；
+   - 本仓库在实现samarati算法时，特别地对数值型QI属性和标签型QI属性加以区分，以更好地计算Loss Metric值；同时对将要被suppress的数据，在计算各属性Loss Metric时，统一视为1，以使得最后算得的Loss Metric更能反映数据可用性损失的真实情况。
+   - 此外，还可以考虑针对性地对不同的属性采用不同的可用性评价方法；但这时候就需要考虑属性的语义以便加以区分，本仓库为了方法对不同数据的适用性，并没有特别实现这一点。
+
+3. 使用其它方法搜索泛化向量的状态空间：
+
+   本仓库并没有实现这一点，但是进行了相应思考以及实现的准备和思考（虽然很明显下面的方法效率并不咋地）。
+
+   如基于已经实现的优先队列，我们可以对状态空间，在BFS graph search框架下，做A* Search；启发式函数可以选用（起点的LM值-当前结点的LM值+两结点之间的间距），向量间距用向量差的模长表示；能证明若状态空间很大，可以很有效地搜索得到可用性较好的满足k匿名的解。
+
+### Mondrian算法处理categorical
+
+可以考虑将标签型属性在原始数据集中的取值实例集合，一一映射到连续的整数集合上，使得标签型属性变成数值型属性；
+
+最后在发布泛化后数据时，将该属性的整数与标签的对应关系也一并发布出去；
+
+本仓库给出了一个实现，但是并未实际测试该实现。

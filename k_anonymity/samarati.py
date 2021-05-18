@@ -219,7 +219,7 @@ class samarati:
         out_path = firstname + '_samarati.data'
         data_new.to_csv(out_path, index=True, header=False)
         print('===>publish file path:{0}'.format(out_path))
-
+        print('===>k={0}, ms={1}, dom={2}'.format(self.k, self.ms, dom))
         print('=>end publishing, total lossmetric is:{0}'.format(value_utility))
         return out_path
 
@@ -285,7 +285,7 @@ class samarati:
 
 
     def find_opt(self, h, i, dom):
-        '''待完成，搜索并返回第h层中LM最优的泛化结果dom'''
+        '''迭代搜索并返回第h层中LM最优的泛化结果dom'''
         qi = self.QI[i]             # 当前处理的qi
         QI_num = len(self.QI)       # QI总个数
         j = min(h, self.tree[qi].h) # 迭代用，从允许的最大的开始迭代
