@@ -371,7 +371,12 @@
            # 初始化最大优先队列为只加入总data，key为
            self.Queue = MyPriorityQueue(bigger)
            self.Queue.enqueue(self.data.count()[S[0]], self.data)
+           # 标签型向数值型转化的dict
+           self.categorical2numerical = {}
+           self.build_categorical2numerical()
    
+       def build_categorical2numerical(self):
+       	'''数据预处理，将标签型转化成数值型'''
        def search(self):
            '''对读入的数据搜解，即将最大优先队列的最大key变得不大于k；优先队列中的每个都相当于一个QI cluster'''
        def pub_data(self):
@@ -529,4 +534,33 @@
 
 最后在发布泛化后数据时，将该属性的整数与标签的对应关系也一并发布出去；
 
-本仓库给出了一个实现，但是并未实际测试该实现。
+本仓库给出了一个实现，同时简单地进行了测试：
+
+```python
+def build_categorical2numerical(self):
+    '''数据预处理，将标签型转化成数值型'''
+    for qi in self.QI:
+        print(self.data[qi].dtypes)
+        if self.data[qi].dtypes == object:
+            # 是标签型，则将标签型映射成为整数
+            vals = np.array(self.data[qi].drop_duplicates())
+            rename = {}
+            i = 0
+            while i < len(vals):
+                rename[vals[i]] = i
+                i = i + 1
+            self.data[qi] = self.data[qi].map(rename)
+            self.categorical2numerical[qi] = rename
+```
+
+上面是在读入数据之后，进行预处理，将标签型映射成整数；而同时，映射关系会被保存成dict型对象，在数据发布时一同发布成yaml文件，在同一父文件夹下。
+
+测试QI=['age', 'gender']，k=10，测试结果如下：
+
+![1](./figs/mondrian_6.jpg)
+
+可以看到对categorical型QI属性gender成功进行了映射，并且成功做了mondrian切分。最后发布的yaml映射关系如下：
+
+![1](./figs/mondrian_7.jpg)
+
+本方法的劣势也是十分明显，在做映射时，并未考虑标签之间的语义关系，即数值上相邻并不代表标签在语义上相邻；最后得到的结果可能并不太好看。

@@ -87,7 +87,8 @@ if __name__ == "__main__":
 
     # 测试Mondrian
     print('mondrian begin:')
-    m = k_anonymity.mondrian(path, int(k), attributes, QI, S)
+    QI1 = ['age', 'gender']
+    m = k_anonymity.mondrian(path, int(k), attributes, QI1, S)
     m.search()
     print('mondrian end.\n\n')
 

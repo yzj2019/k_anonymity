@@ -13,6 +13,7 @@ import pandas as pd     # 数据处理
 import math             # 做floor、ceiling
 import copy             # 用于深拷贝
 import time             # 用于测量运行时间
+import yaml             # 用于发布dict成yaml
 
 
 def bigger(a,b):
@@ -38,7 +39,25 @@ class mondrian:
         # 初始化最大优先队列为只加入总data，key为
         self.Queue = MyPriorityQueue(bigger)
         self.Queue.enqueue(self.data.count()[S[0]], self.data)
+        # 标签型向数值型转化的dict
+        self.categorical2numerical = {}
+        self.build_categorical2numerical()
 
+
+    def build_categorical2numerical(self):
+        '''数据预处理，将标签型转化成数值型'''
+        for qi in self.QI:
+            print(self.data[qi].dtypes)
+            if self.data[qi].dtypes == object:
+                # 是标签型，则将标签型映射成为整数
+                vals = np.array(self.data[qi].drop_duplicates())
+                rename = {}
+                i = 0
+                while i < len(vals):
+                    rename[vals[i]] = i
+                    i = i + 1
+                self.data[qi] = self.data[qi].map(rename)
+                self.categorical2numerical[qi] = rename
 
     def search(self):
         '''对读入的数据搜解，即将最大优先队列的最大key变得不大于k；优先队列中的每个都相当于一个QI cluster'''
@@ -122,6 +141,14 @@ class mondrian:
         self.data.to_csv(out_path, index=False, header=False)
         print('===>publish file path:{0}'.format(out_path))
         print('===>k={0}'.format(self.k))
+
+        # 同时发布标签型向数值型转化的dict成yaml文件
+        out_path_yaml = firstname + '_mondrian.yaml'
+        fp = open(out_path_yaml, 'w')
+        fp.write(yaml.dump(self.categorical2numerical))
+        print(yaml.dump(self.categorical2numerical))
+        fp.close()
+
         end = time.time()   # 结束时间
         print('=>end publishing, total lossmetric is:{0}, total publishing time is:{1}'.format(LossMetric, end-start))
         return out_path
