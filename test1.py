@@ -1,17 +1,13 @@
 #!python3
 # coding=UTF-8
 # 打算最后再做成一个class发布出去
-from sys import argv
 from k_anonymity.load import loaddata
 import os
 import k_anonymity
 from k_anonymity.MyPriorityQueue import MyPriorityQueue
 import numpy as np
 import pandas as pd
-
-script, path, k, ms = argv[0], argv[1], argv[2], argv[3]
-# 注：path可以是相对路径如./data/adult.data，但是要确保树形结构的文件与data文件在同一文件夹下
-# 后面也可以考虑将attributes与QI都输入
+from utils.arg_parser import parse_args
 
 
 def multiply(x,y):
@@ -19,6 +15,10 @@ def multiply(x,y):
 
 
 if __name__ == "__main__":
+    args = parse_args()
+    path, k, ms = args.path, args.k, args.ms
+    # 注：path可以是相对路径如./data/adult.data，但是要确保树形结构的文件与data文件在同一文件夹下
+    # 后面也可以考虑将attributes与QI都输入
     # 测试读数据
     attributes = ['age', 'work_class', 'final_weight', 'education',
                   'education_num', 'marital_status', 'occupation', 'relationship',
