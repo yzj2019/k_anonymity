@@ -1,3 +1,6 @@
+
+</think>
+
 # k匿名两种算法的python实现
 
 ## 环境
@@ -73,10 +76,11 @@ conda install -c conda-forge numpy pandas pyyaml -y
    [samarati](./test1.py)：
 
    ```python
-   from sys import argv	# 脚本参数
+   from utils.arg_parser import parse_args
    import k_anonymity		# 引入模块
    # Begin:预定义path、attributes、QI、S等参数
-   script, path, k, ms = argv[0], argv[1], argv[2], argv[3]
+   args = parse_args()
+   path, k, ms = args.path, args.k, args.ms
    # 注：path可以是相对路径如./data/adult.data，但是要确保树形结构的文件与data文件在同一文件夹下
    attributes = ['age', 'work_class', 'final_weight', 'education',
                  'education_num', 'marital_status', 'occupation', 'relationship',
@@ -95,10 +99,11 @@ conda install -c conda-forge numpy pandas pyyaml -y
    [mondrian](./test2.py)：
 
    ```python
-   from sys import argv	# 脚本参数
+   from utils.arg_parser import parse_args
    import k_anonymity		# 引入模块
    # Begin:预定义path、attributes、QI、S等参数
-   script, path, k = argv[0], argv[1], argv[2]
+   args = parse_args()
+   path, k = args.path, args.k
    attributes = ['age', 'work_class', 'final_weight', 'education',
                  'education_num', 'marital_status', 'occupation', 'relationship',
                  'race', 'gender', 'capital_gain', 'capital_loss', 'hours_per_week',
